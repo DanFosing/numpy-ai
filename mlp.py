@@ -37,9 +37,9 @@ class MLP:
         self.lr = lr
 
     def forward(self, X):
-        self.hidden_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
+        self.hidden_input = np.matmul(X, self.weights_input_hidden) + self.bias_hidden
         self.hidden = relu(self.hidden_input)
-        self.output_input = np.dot(self.hidden, self.weights_hidden_output) + self.bias_output
+        self.output_input = np.matmul(self.hidden, self.weights_hidden_output) + self.bias_output
         self.output = softmax(self.output_input)
         return self.output
     
@@ -47,10 +47,10 @@ class MLP:
         batch_size = y.shape[0]
         # the combination of softmax and cross-entropy loss simplifies the gradient to this:
         output_delta = self.output - y
-        hidden_delta = np.dot(output_delta, self.weights_hidden_output.T) * relu_derivative(self.hidden_input)
+        hidden_delta = np.matmul(output_delta, self.weights_hidden_output.T) * relu_derivative(self.hidden_input)
         
-        self.weights_hidden_output -= np.dot(self.hidden.T, output_delta) / batch_size * self.lr
-        self.weights_input_hidden -= np.dot(X.T, hidden_delta) / batch_size * self.lr
+        self.weights_hidden_output -= np.matmul(self.hidden.T, output_delta) / batch_size * self.lr
+        self.weights_input_hidden -= np.matmul(X.T, hidden_delta) / batch_size * self.lr
 
         self.bias_output -= np.sum(output_delta, axis=0, keepdims=True) / batch_size * self.lr
         self.bias_hidden -= np.sum(hidden_delta, axis=0, keepdims=True) / batch_size * self.lr
