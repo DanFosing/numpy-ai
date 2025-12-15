@@ -2,6 +2,7 @@ import numpy as np
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from modules.activations import relu, relu_derivative, softmax
+from modules.losses import cross_entropy_loss
 
 def one_hot_encode(y, num_classes=10): 
     one_hot = np.zeros((y.shape[0], num_classes))
@@ -14,10 +15,6 @@ y = mnist.target
 y_encoded = one_hot_encode(y) #one hot encoding for simplification and better accuracy
 
 X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
-
-def cross_entropy(y, y_pred, eps=1e-9):
-    return -np.mean(y * np.log(y_pred + eps))
-
 
 class MLP:
     def __init__(self, input_size, hidden_size, output_size, lr=0.01):
@@ -51,7 +48,7 @@ class MLP:
             self.forward(X)
             self.backward(X, y)
             if epoch % 200 == 0:
-                loss = cross_entropy(y, self.output)
+                loss = cross_entropy_loss(y, self.output)
                 print(f'Epoch {epoch}, Loss: {loss}')
 
 mlp = MLP(input_size=64, hidden_size=128, output_size=10, lr=0.1)
