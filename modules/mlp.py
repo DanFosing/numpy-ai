@@ -32,20 +32,27 @@ class MLP:
         return self.output
 
     def backward(self, gradient):
-        axes = tuple(range(gradient.ndim - 1))
-
         if self.dropout_rate > 0:
             scale = 1.0 / (1.0 - self.dropout_rate)
             gradient = gradient * self.dropout_mask * scale
 
-        dW_proj = np.matmul(self.activated.swapaxes(-1, -2), gradient).sum(axis=0)
-        db_proj = np.sum(gradient, axis=axes)
+        batch_dims = tuple(range(gradient.ndim - 1))
+        dW_proj = np.matmul(self.activated.swapaxes(-1, -2), gradient)
+        if dW_proj.ndim > 2:
+            dW_proj = np.sum(dW_proj, axis=batch_dims)
+        
+        db_proj = np.sum(gradient, axis=batch_dims)
+        
         dactivated = np.matmul(gradient, self.W_proj.T)
         
         dhidden = dactivated * gelu_derivative(self.hidden)
         
-        dW_fc = np.matmul(self.input.swapaxes(-1, -2), dhidden).sum(axis=0)
-        db_fc = np.sum(dhidden, axis=axes)
+        dW_fc = np.matmul(self.input.swapaxes(-1, -2), dhidden)
+        if dW_fc.ndim > 2:
+            dW_fc = np.sum(dW_fc, axis=batch_dims)
+        
+        db_fc = np.sum(dhidden, axis=batch_dims)
+        
         dinput = np.matmul(dhidden, self.W_fc.T)
         
         self.grads = [dW_fc, db_fc, dW_proj, db_proj]
