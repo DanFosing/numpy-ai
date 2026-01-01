@@ -19,7 +19,7 @@ class Attention:
         self.group_size = query_heads // kv_heads
 
         
-        scale = (1.0 / xp.sqrt(embed_dim))
+        scale = (1.0 / xp.sqrt(self.head_dim))
         
         # Manual Q, K, V, and output projections (instead of linear layers which would've been more compact
         # and simpler to implement) are used to clearly show how attention works internally

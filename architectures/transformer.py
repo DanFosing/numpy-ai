@@ -81,24 +81,27 @@ class Transformer:
         B, T = tokens.shape
         if mask is None:
             mask = xp.triu(xp.ones((T, T)), k=1).reshape(1, 1, T, T)
-            
+
         x = self.token_embedding(tokens)
-        
+
+        freqs = self.freqs_cis[:T]
+
         for layer in self.layers:
-            x = layer.forward(x, self.freqs_cis, mask)
-            
+            x = layer.forward(x, freqs, mask)
+
         x = self.layer_norm(x)
         logits = self.lm_head(x)
-        
-        self.output = logits
-        return self.output
+        return logits
+
     
     def backward(self, grad_logits):
         d_x = self.lm_head.backward(grad_logits)
         d_x = self.layer_norm.backward(d_x)
+        T = grad_logits.shape[1] 
+        freqs = self.freqs_cis[:T]
         
         for layer in reversed(self.layers):
-            d_x = layer.backward(d_x, self.freqs_cis)
+            d_x = layer.backward(d_x, freqs)
             
         self.token_embedding.backward(d_x)
         
@@ -154,35 +157,23 @@ class Transformer:
 
     def load_state_dict(self, state):
         weights = state.get('weights', state)
-        
-        # Validate structure
-        if len(weights['layers']) != len(self.layers):
-            raise ValueError(f"State dict has {len(weights['layers'])} layers, model has {len(self.layers)}")
-    
-        if weights['token_embedding'][0].shape != self.token_embedding.params[0].shape:
-            raise ValueError(f"Embedding shape mismatch: state has {weights['token_embedding'][0].shape}, "
-                            f"model has {self.token_embedding.params[0].shape}")
-        
-        if weights['lm_head'][0].shape != self.lm_head.params[0].shape:
-            raise ValueError(f"LM head shape mismatch: state has {weights['lm_head'][0].shape}, "
-                            f"model has {self.lm_head.params[0].shape}")
-        
-        # Load weights
-        self.token_embedding.params = weights['token_embedding']
-        
+
+        def load(dst, src):
+            if len(dst) != len(src):
+                raise ValueError("Param list length mismatch")
+            for d, s in zip(dst, src):
+                d[...] = s
+
+        load(self.token_embedding.params, weights['token_embedding'])
+
         for layer, layer_state in zip(self.layers, weights['layers']):
-            layer.ln1.params = layer_state['ln1']
-            layer.attn.params = layer_state['attn']
-            layer.ln2.params = layer_state['ln2']
-            layer.mlp.params = layer_state['mlp']
-        
-        self.layer_norm.params = weights['layer_norm']
-        self.lm_head.params = weights['lm_head']
-        
-        self.params = self.token_embedding.params[:]
-        for layer in self.layers:
-            self.params.extend(layer.params)
-        self.params += self.layer_norm.params + self.lm_head.params
+            load(layer.ln1.params, layer_state['ln1'])
+            load(layer.attn.params, layer_state['attn'])
+            load(layer.ln2.params, layer_state['ln2'])
+            load(layer.mlp.params, layer_state['mlp'])
+
+        load(self.layer_norm.params, weights['layer_norm'])
+        load(self.lm_head.params, weights['lm_head'])
 
     @classmethod
     def from_state_dict(cls, state): # Initialize model from complete state_dict

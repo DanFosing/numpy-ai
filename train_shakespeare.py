@@ -14,9 +14,10 @@ from modules.gradient_clipping import clip_grad_norm
 from data_utils.dataloader import DataLoader
 from data_utils.dataset import ArrayDataset
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Training")
-    parser.add_argument("--vocab_size", type=int, default=8192)
+    parser.add_argument("--vocab_size", type=int, default=512)
     parser.add_argument("--embed_dim", type=int, default=256)
     parser.add_argument("--query_heads", type=int, default=8)
     parser.add_argument("--key_value_heads", type=int, default=4)
@@ -26,18 +27,46 @@ def parse_args():
     parser.add_argument("--max_seq_len", type=int, default=512) # Max sequence length for inference, that's the length that we precompute freqs_cis for
     parser.add_argument("--training_seq_len", type=int, default=128)
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--lr", type=float, default=1.5e-3)
+    parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--eta_min", type=float, default=5e-4)
-    parser.add_argument("--weight_decay", type=float, default=0.01)
-    parser.add_argument("--max_grad_norm", type=float, default=1.0)
-    parser.add_argument("--log_interval", type=int, default=10)
+    parser.add_argument("--weight_decay", type=float, default=0.03)
+    parser.add_argument("--max_grad_norm", type=float, default=0.8)
+    parser.add_argument("--log_interval", type=int, default=5)
     parser.add_argument("--data_path", type=str, default="shakespeare.txt")
-    parser.add_argument("--tokenizer_path", type=str, default="tokenizer.json")
+    parser.add_argument("--tokenizer_path", type=str, default="examples/transformer_3.16M/tokenizer.json")
+    parser.add_argument("--eval_ratio", type=float, default=0.05)
     parser.add_argument("--data_url", type=str, default="https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt")
-    parser.add_argument("--logs_path", type=str, default="logs.json")
-    parser.add_argument("--save_path", type=str, default="transformer_shakespeare.pkl")
+    parser.add_argument("--logs_path", type=str, default="examples/transformer_3.16M/logs.json")
+    parser.add_argument("--save_path", type=str, default="examples/transformer_3.16M/transformer_shakespeare.pkl")
+
     return parser.parse_args()
+
+def ensure_directories(args):
+    paths = [args.data_path, args.tokenizer_path, args.logs_path, args.save_path]
+    
+    for path in paths:
+        if path:
+            directory = os.path.dirname(path)
+            if directory and not os.path.exists(directory):
+                print(f"Creating directory: {directory}")
+                os.makedirs(directory, exist_ok=True)
+
+def evaluate(model, dataloader, criterion):
+    model.eval()
+    total_loss = 0.0
+    total_tokens = 0
+
+    for xb, yb in dataloader:
+        logits = model.forward(xb)
+        loss = criterion(logits, yb)
+
+        tokens = yb.size
+        total_loss += loss.item() * tokens
+        total_tokens += tokens
+
+    model.train()
+    return total_loss / total_tokens
 
 def get_data_and_tokenizer(args):
     if not os.path.exists(args.data_path):
@@ -71,7 +100,13 @@ def get_data_and_tokenizer(args):
 
 def main():
     args = parse_args()
+    ensure_directories(args)
+
     X, y, tokenizer = get_data_and_tokenizer(args)
+    
+    num_eval = int(len(X) * args.eval_ratio)
+    X_train, X_eval = X[:-num_eval], X[-num_eval:]
+    y_train, y_eval = y[:-num_eval], y[-num_eval:]
     
     model = Transformer(args.vocab_size, args.embed_dim, args.query_heads, args.key_value_heads, 
                         hidden_dim=args.hidden_dim, layers=args.layers, max_seq_len=args.max_seq_len, dropout_rate=args.dropout_rate)
@@ -86,8 +121,11 @@ def main():
 
     optimizer = AdamW(model.params, lr=args.lr, weight_decay=args.weight_decay)
     
-    dataset = ArrayDataset(X, y)
+    dataset = ArrayDataset(X_train, y_train)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, drop_last=False)
+    
+    eval_dataset = ArrayDataset(X_eval, y_eval)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False, drop_last=False)
     
     total_steps = args.epochs * len(dataloader)
     scheduler = CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=args.eta_min)
@@ -97,7 +135,8 @@ def main():
 
     training_history = {
         'steps': [],
-        'losses': [],
+        'train_losses': [],
+        'eval_losses': [],
         'epochs': [],
         'learning_rates': []
     }
@@ -119,25 +158,36 @@ def main():
             # Optimization
             clip_grad_norm(model.grads, max_norm=args.max_grad_norm)
             optimizer.step(model.grads)
-            optimizer.zero_grad(model.grads) # Grads are reset every backward pass in current implementation so this is not needed for now
+
+            # Grads are reset every backward pass in the current implementation.
+            # This call is technically redundant, but kept for clarity and demonstration purposes.
+            optimizer.zero_grad(model.grads)
+
+            # Update learning rate
             scheduler.step()
             step += 1
 
+            # Logging
             if step % args.log_interval == 0 or step == 1:
                 epoch_progress = epoch + (batch_idx + 1) / len(dataloader)
-                print(f"Step {step}/{total_steps}, Loss: {loss:.4f}, LR: {scheduler.lr:.6f}, Epoch: {epoch_progress:.2f}")
+                
+                eval_loss = evaluate(model, eval_dataloader, criterion)
+                print(f"Step {step}/{total_steps}, Loss: {loss:.4f}, Eval Loss: {eval_loss:.4f}, LR: {scheduler.lr:.6f}, Epoch: {epoch_progress:.2f}")
 
                 if args.logs_path is not None:
                     training_history['steps'].append(step)
-                    training_history['losses'].append(loss.item())
+                    training_history['train_losses'].append(loss.item())
+                    training_history['eval_losses'].append(eval_loss)
                     training_history['epochs'].append(epoch_progress)
                     training_history['learning_rates'].append(scheduler.lr)
 
     if step % args.log_interval != 0: # Save last step if it's not a multiple of log_interval
         epoch_progress = args.epochs
+        eval_loss = evaluate(model, eval_dataloader, criterion)
         if args.logs_path is not None:
             training_history['steps'].append(step)
-            training_history['losses'].append(loss.item())
+            training_history['train_losses'].append(loss.item())
+            training_history['eval_losses'].append(eval_loss)
             training_history['epochs'].append(epoch_progress)
             training_history['learning_rates'].append(scheduler.lr)
 
