@@ -242,7 +242,7 @@ Because to their father's
 
 ---
 **Output analysis:**
-The model generates text in a Shakespearean play style, using dialogue structure, character names, and recurring themes common in Shakespeare’s works. Outputs vary with sampling settings, becoming more creative or more repetitive, but remain stylistically consistent, creating new sentences rather than copying exact wording from the plays.
+The model generates text in a Shakespearean play style, using dialogue structure, character names, and recurring themes common in Shakespeare’s works. Outputs vary with sampling settings, becoming more creative or more repetitive, but remain stylistically consistent (although with occasional grammatical imperfections), creating new sentences rather than copying exact wording from the plays.
 
 ---
 
