@@ -10,7 +10,7 @@ NumPy-AI is an educational framework that strips away the "black box" of modern 
 
 **⚙️ Backend** (`backend.py`)
 - Unified interface (`xp`) that supports both NumPy (CPU) and CuPy (GPU)
-- Configure once via `.env`
+- Configure once via `config.py`
 - Utility functions like `to_cpu()`, `to_gpu()` and `get_device()` for device management
 
 **🧱 Core Modules** (`modules/`)
@@ -61,6 +61,7 @@ numpy-ai/
 ├── data_utils/             # Data pipeline
 │   ├── dataset.py
 │   └── dataloader.py
+├── config.py               # Config for backend 
 ├── train_mnist_mlp.py      # Simple MLP example
 ├── train_shakespeare.py    # Transformer training
 └── inference_transformer.py # Text generation
@@ -70,7 +71,6 @@ numpy-ai/
 
 **Requirements:**
 - NumPy
-- python-dotenv
 - CuPy (optional, for GPU support)
 
 **Installation:**
@@ -80,7 +80,7 @@ git clone https://github.com/DanFosing/numpy-ai.git
 cd numpy-ai
 
 # Install dependencies
-pip install numpy python-dotenv
+pip install numpy
 
 # (Optional) Install CuPy for GPU acceleration
 # On CUDA (NVIDIA GPU), please note you need to have NVIDIA CUDA Toolkit installed:
@@ -92,9 +92,9 @@ pip install cupy-rocm-7-0 # Match your ROCm version
 
 **Configuration:**
 
-Create a `.env` file in the project root:
-```env
-BACKEND_TYPE=numpy  # or 'cupy' for GPU
+Edit `config.py` file in the project root:
+```python
+BACKEND_TYPE = "numpy"   # or "cupy" for GPU
 ```
 
 ## Examples
