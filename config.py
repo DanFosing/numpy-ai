@@ -1,1 +1,1 @@
-BACKEND_TYPE = "numpy"   # or "numpy"
+BACKEND_TYPE = "numpy"   # or "cupy"
