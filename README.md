@@ -69,7 +69,6 @@ numpy-ai/
 ## Prerequisites and Setup
 
 **Requirements:**
-- Python 3.8+
 - NumPy
 - python-dotenv
 - CuPy (optional, for GPU support)
