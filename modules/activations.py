@@ -4,12 +4,10 @@ def gelu(x):
 
 def gelu_derivative(x):
     k = xp.sqrt(2 / xp.pi)
-    x3 = 0.044715 * x**3
-    x2 = 0.044715 * x**2
-    inner = k * (x + x3)
+    inner = k * (x + 0.044715 * x**3)
     tanh_inner = xp.tanh(inner)
     
-    return 0.5 * (1 + tanh_inner) + 0.5 * x * (1 - tanh_inner**2) * k * (1 + 3 * x2)
+    return 0.5 * (1 + tanh_inner) + 0.5 * x * (1 - tanh_inner**2) * k * (1 + 3 * 0.044715 * x**2)
 
 def relu(x):
     return xp.maximum(0, x)

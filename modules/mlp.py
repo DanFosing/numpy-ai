@@ -41,14 +41,14 @@ class MLP:
         return self.output
 
     def backward(self, gradient):
-        if self.dropout_rate > 0:
+        if self.dropout_rate > 0 and self.training:
             scale = 1.0 / (1.0 - self.dropout_rate)
             gradient = gradient * self.dropout_mask * scale
 
         batch_dims = tuple(range(gradient.ndim - 1))
-        dW_proj = xp.matmul(self.activated.swapaxes(-1, -2), gradient)
-        if dW_proj.ndim > 2:
-            dW_proj = xp.sum(dW_proj, axis=batch_dims)
+        activated_flat = self.activated.reshape(-1, self.activated.shape[-1])
+        gradient_flat = gradient.reshape(-1, gradient.shape[-1])
+        dW_proj = xp.matmul(activated_flat.T, gradient_flat)
         
         db_proj = xp.sum(gradient, axis=batch_dims)
         
@@ -56,9 +56,9 @@ class MLP:
         
         dhidden = dactivated * gelu_derivative(self.hidden)
         
-        dW_fc = xp.matmul(self.input.swapaxes(-1, -2), dhidden)
-        if dW_fc.ndim > 2:
-            dW_fc = xp.sum(dW_fc, axis=batch_dims)
+        input_flat = self.input.reshape(-1, self.input.shape[-1])
+        dhidden_flat = dhidden.reshape(-1, dhidden.shape[-1])
+        dW_fc = xp.matmul(input_flat.T, dhidden_flat)
         
         db_fc = xp.sum(dhidden, axis=batch_dims)
         

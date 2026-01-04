@@ -143,11 +143,11 @@ Training Sequence Length: 128
 
 **Training Configuration:**
 ```python
-Optimizer: AdamW (lr=1.5e-3, weight_decay=0.03)
+Optimizer: AdamW (lr=1.5e-3, weight_decay=0.05)
 Scheduler: Cosine Annealing (eta_min=5e-4)
 Gradient Clipping: max_norm=0.8
 Batch Size: 32
-Epochs: 15
+Epochs: 12
 Dropout: 0.1
 ```
 
@@ -177,18 +177,16 @@ ROMEO:
 
 Output:
 ```
-Palease you weller;
-Then my regrage?
+Tush, I greaterve.
 
-DUKE VINCENTIO:
-I know you to-morrow, and not die.
+POMPEY:
+Sold, what we will:
+The gods you know's young far.
 
-ISABELLA:
-Ah, sir, madam:
-Come, sir, good hearts.
-
-AUTOLYCUS:
-No, by my heart.
+Messenger:
+But now, say, welcome, sir, and then we'll
+spech the crown,
+Commend me in the nature of your friends,
 ```
 
 ---
@@ -207,18 +205,17 @@ First Citizen:
 ```
 Output:
 ```
-His did I will not.
+I'll be a poor, and I will prove again.
 
-CORIOLANUS:
-Why, my lord,
-And I have done to me.
+LUCIO:
+If I, sir, I'll bear these against their flowers.
 
-CORIOLANUS:
-Why, my lord,
-It not bearing to the Tower, and then,
-And make a brother, orthy of the royal prove.
+GREMIO:
+It is a propery,
+And, if you have made you too much.
 
-KING RICHARD
+MENENIUS:
+Ay, sir, I'll not
 ```
 
 ---
@@ -227,16 +224,24 @@ KING RICHARD
 
 Prompt: 
 ```
-First Citizen: Speak, speak! Why are you
+First Senator:
+Stay: whence are
 ```
 
 Output:
 ```
-Therefore, and then sentleeps, they are they say
-Therefore poor brothers, they are too much,
-Where they have did nothing but then their chamber
-To worthy of the prophecialment of the present
-Because to their father's
+enough, and then, I'll
+so better.
+
+MENENIUS:
+When he did;
+But if they are quickly proclaim'd
+To bear their love to the enemy.
+
+MENENIUS:
+Away, I will, my lord.
+
+DUKE OF AUMERLE:
 ```
 
 ---
@@ -248,8 +253,8 @@ The model generates text in a Shakespearean play style, using dialogue structure
 ## Visualizing training
 **Training losses:**
 ```
-Average of last 5 train losses: 2.5293
-Average of last 5 eval losses: 3.1924
+Average of last 5 train losses: 2.3858
+Average of last 5 eval losses: 3.0743
 ```
 
 **Loss plot:**

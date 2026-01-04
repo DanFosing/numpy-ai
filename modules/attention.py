@@ -76,8 +76,10 @@ class Attention:
 
             batch_size, seq_length, embed_dim = X.shape
             
-            dWout_proj = xp.matmul(attn_output.swapaxes(-1, -2), gradient).sum(axis=0)
-            
+            attn_output_flat = attn_output.reshape(batch_size * seq_length, embed_dim)
+            gradient_flat = gradient.reshape(batch_size * seq_length, embed_dim)
+            dWout_proj = xp.matmul(attn_output_flat.T, gradient_flat)
+
             dattn_output = xp.matmul(gradient, self.Wout_proj.T)
             dattn_output = dattn_output.reshape(batch_size, seq_length, self.query_heads, self.head_dim).transpose(0, 2, 1, 3)
 
