@@ -42,6 +42,12 @@ NumPy-AI is an educational framework that strips away the "black box" of modern 
 ```
 numpy-ai/
 ├── backend.py              # NumPy/CuPy abstraction layer
+├── examples/               # Examples
+│   └── transformer_3.16M/  # Transformer model
+|       ├── tokenizer.json   # Tokenizer
+|       ├── transformer_shakespeare.pkl  # Pretrained model weights
+|       ├── loss_plot.png    # Training loss plot
+|       └── logs.json        # Training logs
 ├── architectures/          # High-level models
 │   └── transformer.py
 ├── modules/                # Core building blocks
